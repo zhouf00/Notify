@@ -1,4 +1,4 @@
-import xlrd, os
+import xlrd, os, time
 import pythoncom
 from docx import Document
 from win32com import client

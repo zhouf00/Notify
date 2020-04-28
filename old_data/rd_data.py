@@ -99,10 +99,10 @@ class ReadDataLines(object):
             word = client.DispatchEx("word.Application")
             if os.path.exists(pdf_file):
                 os.remove(pdf_file)
-            self.worddoc = word.Documents.Open(doc_new_file, ReadOnly=1)
+            worddoc = word.Documents.Open(doc_new_file, ReadOnly=1)
             print("开始转换", ctime())
-            self.worddoc.SaveAs(pdf_file, FileFormat=17)
-            self.worddoc.Close()
+            worddoc.SaveAs(pdf_file, FileFormat=17)
+            worddoc.Close()
             word.Quit() # 多线程使用时太费时间
             del(word)
             return pdf_name, pdf_file

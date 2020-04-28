@@ -1,5 +1,4 @@
 import pandas as pd
-from datetime import datetime
 
 def test1():
     data = pd.read_excel('收款明细表样表.xls')
@@ -20,23 +19,37 @@ def test2():
     print(c[0].strftime('%Y-%m-%d'))
 
 def test3():
-    data = pd.read_excel('付款明细表样表.xls')
-    columns = list(data)    # 获取列名
-    # print(columns)
-    data = pd.DataFrame(data)
-    a = data.iloc[:, :columns.index('收款从属')+1]  # 截取有效数据
-    user_index = columns.index('报销人')
+
+    data = pd.DataFrame(pd.read_excel('付款明细表样表.xls'))
+    columns = list(data)  # 获取列名
+
+    a = data.iloc[:, columns.index('日期'):columns.index('收款从属')+1]  # 截取有效数据
+    to_index = columns.index('报销人')
+    cc = '抄送人员'
+    if cc in columns:
+        cc_index = columns.index(cc)
+    else:
+        cc_index = None
     data_dict = {}
-    print(user_index)
     for var in a.values:
-        # print(var[user_index], var)
-        if var[user_index] in data_dict.keys():
-            data_dict[var[user_index]].append(list(var))
+        if var[to_index] in data_dict.keys():
+            data_dict[var[to_index]]['value'].append(list(var[:to_index]))
         else:
-            data_dict[var[user_index]] = [list(var)]
-    print(len(data_dict))
+            if cc_index:
+                data_dict[var[to_index]] = {
+                    'to': var[to_index],
+                    'cc': var[cc_index],
+                    'value': [list(var[:to_index])]
+                }
+            else:
+                data_dict[var[to_index]] = {
+                    'to': var[to_index],
+                    'cc': None,
+                    'value': [list(var[:to_index])]
+                }
     for key, value in data_dict.items():
         print(key, value)
+    return data_dict.items()
 
 
 def test4():
@@ -49,6 +62,10 @@ def test4():
     # print(df)
 
 if __name__ == '__main__':
-    test3()
-    test4()
+    a = test3()
+    for key, value in a:
+        for var in value['value']:
+            print(value['to'], value['cc'], var)
+        value.pop('value')
+    print(a)
     # datetime.today().strftime()

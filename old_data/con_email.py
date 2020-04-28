@@ -17,6 +17,7 @@ def _send_mail(*args):
     message['Subject'] = sub%(month, pdf_name)
     message['From'] = user
     message['To'] = row_email
+    # message['Cc'] = cc    # 抄送人
 
     # 加入正文
     # 加入签名
