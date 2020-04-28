@@ -165,17 +165,14 @@ if __name__ == '__main__':
     html_sign = r"D:\Study\项目练习\发邮件软件\qianmin.html"
     img_path = "D:\Study\项目练习\发邮件软件\公司logo.jpg"
 
-    aa = ReadData("工资条.xlsx", "工资", "工资条模板.docx")
+    aa = ReadData("收款明细表样表.xls", "底稿模板", "工资条模板.docx")
     full_value = aa.rd_xl_value()
-    """
+
     try:
         while True:
-            aa._main(full_value.__next__())
+            print(full_value.__next__())
     except StopIteration:
         exit()
     finally:
         print("测试成功", ctime())
-    """
-    aa._main2()
-    #Thread(target=aa._main2).start()
-    #Thread(target=aa._change, args=(full_value.__next__(),)).start()
+

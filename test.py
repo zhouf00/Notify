@@ -1,4 +1,3 @@
-f = open('signature.html', 'r',encoding='utf8')
+f = open('signature.html', 'r', encoding='utf8')
 a = f.read()
-b= "%saaa"
-print(a.format('a','3月'))
+print(a.format('称谓','3月','名字','email', 'email', '手机'))

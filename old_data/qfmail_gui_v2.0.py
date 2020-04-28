@@ -1,10 +1,10 @@
 import wx
-from rd_config import HeadConf, MailConf
+from old_data.rd_config import HeadConf, MailConf
 from threading import Thread
 #from my_threading import MyThread
-from rd_data2 import ReadData
+from old_data.rd_data2 import ReadData
 #from rd_data import ReadDataLines
-from con_email import _send_mail
+from old_data.con_email import _send_mail
 
 
 class QfmailFrame(wx.Frame):
