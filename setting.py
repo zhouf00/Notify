@@ -42,15 +42,12 @@ class Setting(object):
             conf = self._DEFAULTINI
         else:
             conf = os.path.join(self._CONF_DIR, conf)
-        print(conf)
         with open(conf, 'r', encoding="utf8") as f:
             conf_dict = {}
             for var in f.readlines():
-                print(var)
                 key, value = var.strip().split('=')
                 conf_dict[key] = value
         self.conf_ini = conf_dict
-        print(conf_dict)
         self._task_name = conf_dict['task']
         return conf_dict
 
