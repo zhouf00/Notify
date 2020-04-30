@@ -18,6 +18,7 @@ class FileProcessing(object):
         df = df.where(df.notnull(), '')
         self._df = pd.DataFrame(df)
         self._columns = list(self._df)  # 获取列名
+        self._columns.append('')
         return self._columns
 
     def get_excelData(self, s_str, e_str, type, to, cc):

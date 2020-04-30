@@ -433,7 +433,7 @@ class MyDialog_Mail(wx.Dialog):
 
     def initvalue(self, e):
         try:
-            self.Mail_conf.w_mail("smtp.exmail.qq.com", "465", "doc@windit.com.cn",
+            self.Mail_conf.w_mail("smtp.exmail.qq.com", "465", "model@windit.com.cn",
                                   "Zzqa2018", "18167000916", u"文档管理", u"3月")
 
         except Exception as e:

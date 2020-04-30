@@ -97,7 +97,7 @@ if __name__ == '__main__':
 
     email_host = "smtp.exmail.qq.com"
     email_port = 465
-    mail_name = "doc@windit.com.cn"
+    mail_name = "model@windit.com.cn"
     mail_passwd = "Zzqa2018"
     name = "文档管理"
     month = "11月"

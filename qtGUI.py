@@ -98,16 +98,26 @@ class MainUI(QMainWindow):
         self.generate_act.triggered.connect(self._func_generate)
 
     # 配置文件加载
-    def _load_setting(self):
-        conf = self.setting.load_conf()
-        task_list = self.setting.get_task().keys()
+    def _load_setting(self, task=None):
+        task_conf = self.setting.get_task()
+        task_list = task_conf.keys()
+        if task:
+            task_ini = task_conf[task]
+        else:
+            task_ini = None
+        conf = self.setting.load_conf(task_ini)
+        self.left_chk1.clear()
         self.left_chk1.addItems(task_list)
-        self.left_chk1.setCurrentIndex(list(task_list).index(conf['task']))
+        if task:
+            task_index = list(task_list).index(task)
+        else:
+            task_index = list(task_list).index(conf['task'])
+        self.left_chk1.setCurrentIndex(task_index)
         self.left_btn_1.setText(conf['email_file'])
         self.left_btn_3.setText(conf['data_execl'])
         self.left_btn_4.setText(conf['model_word'])
         self.left_btn_5.setText(conf['model_html'])
-        self.action = FileProcessing(conf['data_execl'], self.setting.TEMP_DIR)
+        self.action = FileProcessing(self.setting.get_model(self.left_btn_3.text()), self.setting.TEMP_DIR)
         header_list = self.action.get_data
         self.left_chk2.addItems(header_list)
         self.left_chk2.setCurrentIndex(header_list.index(conf['s_str']))
@@ -117,14 +127,8 @@ class MainUI(QMainWindow):
         self.left_chk4.setCurrentIndex(header_list.index(conf['type']))
         self.left_chk5.addItems(header_list)
         self.left_chk5.setCurrentIndex(header_list.index(conf['to']))
-        if not conf['cc']:
-            header_list.append('--')
-            self.left_chk6.addItems(header_list)
-            self.left_chk6.setCurrentIndex(header_list.index('--'))
-        else:
-            self.left_chk6.addItems(header_list)
-            self.left_chk6.setCurrentIndex(header_list.index(conf['cc']))
-
+        self.left_chk6.addItems(header_list)
+        self.left_chk6.setCurrentIndex(header_list.index(conf['cc']))
 
     # 左侧显示信息
     def _left_layout(self, layout):
@@ -227,18 +231,20 @@ class MainUI(QMainWindow):
     def _func_add(self):
         value, ok = QInputDialog.getText(self, '消息框', '请输入新任务名：', QLineEdit.Normal, '工资条发送')
         if ok:
-            self.setting.write_conf(value)
+            self.setting.write_task(value)
             self.left_chk1.addItems([value])
-
-
+            self.setting.mkdir(value)
 
     def _func_use(self):
-        print('使用')
+        task = self.left_chk1.currentText()
+        self._load_setting(task)
 
-    def _func_mail_file(self):
+    def _func_mail_file(self, e):
         print('员工邮箱文件')
         self.axWidget.clear()
         file = self.left_btn_1.text()
+        os.system('explorer %s'%self.setting.get_conf(file))
+
         # if not self.axWidget.setControl('Excel.Application'):
         #     return QMessageBox.critical(self, '错误', '没有安装  %s' % 'Excel.Application')
         # self.axWidget.dynamicCall(
@@ -246,32 +252,43 @@ class MainUI(QMainWindow):
         # self.axWidget.setProperty('DisplayAlerts', False)
         # self.axWidget.setControl(self.setting.get_conf(file))
         # self.axWidget.show()
-        print(self.setting.get_conf(file))
-        os.system('open E:\\Study\\Notify\\conf\\邮箱管理.xlsx')
-
-
-
 
     def _func_change_file(self):
         print('确定发送内容')
+        conf = self.setting.conf_ini
+        conf['s_str'] = self.left_chk2.currentText()
+        conf['e_str'] = self.left_chk3.currentText()
+        conf['type'] = self.left_chk4.currentText()
+        conf['to'] = self.left_chk5.currentText()
+        conf['cc'] = self.left_chk6.currentText()
+        self.setting.write_conf(conf)
 
     def _func_execl_file(self):
         print('请添加execl文件')
+        file = self.left_btn_3.text()
+        print(self.setting.get_model(file))
+        os.system('explorer %s' % self.setting.get_model(file)) # 打开文件
 
     def _func_word_file(self):
         print('请添加word文件')
+        file = self.left_btn_4.text()
+        print(self.setting.get_model(file))
+        os.system('explorer %s' % self.setting.get_model(file))  # 打开文件
 
     def _func_html_file(self):
         print('请添加html文件')
+        file = self.left_btn_5.text()
+        print(self.setting.get_model(file))
+        os.system('explorer %s' % self.setting.get_model(file))  # 打开文件
 
     def _func_send(self):
-
         print('发送成功')
         self.send_act.setDisabled(True)
 
     def _func_generate(self):
         print('生成附件')
 
+    # 鼠标移动窗口
     # def mousePressEvent(self, event):
     #     if event.button() == Qt.LeftButton:
     #         self.m_flag = True
@@ -291,10 +308,9 @@ class MainUI(QMainWindow):
 
 
 if __name__ == '__main__':
-        cgitb.enable(format='text')
-        app = QApplication(sys.argv)
-        win = MainUI()
-        with open('qtCSS.qss', 'r') as f:
-            content = f.read()
-            app.setStyleSheet(content)
-        sys.exit(app.exec_())
+    from Tool import QSSTool
+    cgitb.enable(format='text')
+    app = QApplication(sys.argv)
+    win = MainUI()
+    QSSTool.setQssToObj('qtCSS.qss', app)
+    sys.exit(app.exec_())
