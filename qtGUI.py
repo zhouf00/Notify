@@ -119,14 +119,19 @@ class MainUI(QMainWindow):
         self.left_btn_5.setText(conf['model_html'])
         self.action = FileProcessing(self.setting.get_model(self.left_btn_3.text()), self.setting.TEMP_DIR)
         header_list = self.action.get_data
+        self.left_chk2.clear()
         self.left_chk2.addItems(header_list)
         self.left_chk2.setCurrentIndex(header_list.index(conf['s_str']))
+        self.left_chk3.clear()
         self.left_chk3.addItems(header_list)
         self.left_chk3.setCurrentIndex(header_list.index(conf['e_str']))
+        self.left_chk4.clear()
         self.left_chk4.addItems(header_list)
         self.left_chk4.setCurrentIndex(header_list.index(conf['type']))
+        self.left_chk5.clear()
         self.left_chk5.addItems(header_list)
         self.left_chk5.setCurrentIndex(header_list.index(conf['to']))
+        self.left_chk6.clear()
         self.left_chk6.addItems(header_list)
         self.left_chk6.setCurrentIndex(header_list.index(conf['cc']))
 
@@ -233,7 +238,6 @@ class MainUI(QMainWindow):
         if ok:
             self.setting.write_task(value)
             self.left_chk1.addItems([value])
-            self.setting.mkdir(value)
 
     def _func_use(self):
         task = self.left_chk1.currentText()
