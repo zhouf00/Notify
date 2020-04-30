@@ -1,11 +1,15 @@
 import sys, cgitb, os
 import qtawesome
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QGridLayout, QAction, qApp, QMenu, QPushButton,
-                             QLabel, QComboBox,QTableWidget, QMessageBox, QInputDialog, QLineEdit
+                             QLabel, QComboBox,QTableWidget, QMessageBox, QInputDialog, QLineEdit,QFileDialog,
                              )
 from PyQt5.QtCore import Qt
+from PyQt5.QAxContainer import QAxWidget
 # from PyQt5.Qt import QCursor
 from PyQt5.QtGui import QPixmap
+
+from setting import Setting
+from get_data import FileProcessing
 
 
 class MainUI(QMainWindow):
@@ -14,16 +18,18 @@ class MainUI(QMainWindow):
         super().__init__()
         self.BASE_DIR = os.getcwd()
         self._init_ui()
+        self._load_setting()
         self.show()
-        self.left_chk1_conf = os.path.join(self.BASE_DIR, 'conf', 'n_conf.ini')
 
     def _init_ui(self):
-        self.setFixedSize(800, 550)
+        self.setFixedSize(800, 600)
         # self.setWindowTitle('群发软件测试v0.1')
-        main_widget = QWidget()
+        self.axWidget = QAxWidget(self)
+        main_widget = QWidget(self)
         main_widget.setObjectName('main_widget')
         main_layout = QGridLayout()
         main_widget.setLayout(main_layout)
+        self.setting = Setting()
 
         # self.statusBar().showMessage("状态栏")
 
@@ -59,7 +65,6 @@ class MainUI(QMainWindow):
         # self.setAttribute(Qt.WA_TintedBackground)   # 设置窗口背景透明
         # main_layout.setSpacing(0)   # 去缝隙
 
-
     # 菜单栏信息
     def _menu_bar(self):
         open_act = QAction('设置', self)
@@ -72,7 +77,6 @@ class MainUI(QMainWindow):
 
         help_menu = menu_bar.addMenu('帮助')
         help_menu.addAction(about_act)
-
 
     # 工具栏信息
     def _tools_bar(self):
@@ -93,6 +97,35 @@ class MainUI(QMainWindow):
         self.send_act.triggered.connect(self._func_send)
         self.generate_act.triggered.connect(self._func_generate)
 
+    # 配置文件加载
+    def _load_setting(self):
+        conf = self.setting.load_conf()
+        task_list = self.setting.get_task().keys()
+        self.left_chk1.addItems(task_list)
+        self.left_chk1.setCurrentIndex(list(task_list).index(conf['task']))
+        self.left_btn_1.setText(conf['email_file'])
+        self.left_btn_3.setText(conf['data_execl'])
+        self.left_btn_4.setText(conf['model_word'])
+        self.left_btn_5.setText(conf['model_html'])
+        self.action = FileProcessing(conf['data_execl'], self.setting.TEMP_DIR)
+        header_list = self.action.get_data
+        self.left_chk2.addItems(header_list)
+        self.left_chk2.setCurrentIndex(header_list.index(conf['s_str']))
+        self.left_chk3.addItems(header_list)
+        self.left_chk3.setCurrentIndex(header_list.index(conf['e_str']))
+        self.left_chk4.addItems(header_list)
+        self.left_chk4.setCurrentIndex(header_list.index(conf['type']))
+        self.left_chk5.addItems(header_list)
+        self.left_chk5.setCurrentIndex(header_list.index(conf['to']))
+        if not conf['cc']:
+            header_list.append('--')
+            self.left_chk6.addItems(header_list)
+            self.left_chk6.setCurrentIndex(header_list.index('--'))
+        else:
+            self.left_chk6.addItems(header_list)
+            self.left_chk6.setCurrentIndex(header_list.index(conf['cc']))
+
+
     # 左侧显示信息
     def _left_layout(self, layout):
         left_label_1 = QPushButton('邮箱文件设置')
@@ -107,19 +140,21 @@ class MainUI(QMainWindow):
         left_label_5.setObjectName('left_label_btn')
         left_label_6 = QLabel('结束')
         left_label_6.setObjectName('left_label_btn')
-        left_label_7 = QLabel('分类')
+        left_label_7 = QLabel('信息归属')
         left_label_7.setObjectName('left_label_btn')
         left_label_8 = QLabel('收件人')
         left_label_8.setObjectName('left_label_btn')
+        left_label_10 = QLabel('抄送人')
+        left_label_10.setObjectName('left_label_btn')
         left_label_9 = QLabel(self)
         left_label_9.setGeometry(0,0,200,100)
         logo = QPixmap(os.path.join(os.getcwd(), 'conf', 'LOGO.png'))\
             .scaled(left_label_9.width(), left_label_9.height())
         left_label_9.setPixmap(logo)
 
-        alist = ['工资发送']
+
         self.left_chk1 = QComboBox()
-        self.left_chk1.addItems(alist)
+
         left_chk1_btnADD = QPushButton('新建')
         left_chk1_btnADD.setObjectName('left_btn')
         left_chk1_btnUSE = QPushButton('使用')
@@ -129,13 +164,14 @@ class MainUI(QMainWindow):
         self.left_btn_2 = QPushButton('确定发送内空')
         self.left_btn_2.setObjectName('left_btn')
         self.left_chk2 = QComboBox()
-        self.left_chk2.addItems(['日期'])
+        # self.left_chk2.addItems(['日期'])
         self.left_chk3 = QComboBox()
-        self.left_chk3.addItems(['金额'])
+        # self.left_chk3.addItems(['金额'])
         self.left_chk4 = QComboBox()
-        self.left_chk4.addItems(['报销人'])
+        # self.left_chk4.addItems(['报销人'])
         self.left_chk5 = QComboBox()
-        self.left_chk5.addItems(['报销人'])
+        # self.left_chk5.addItems(['报销人'])
+        self.left_chk6 = QComboBox()
         self.left_btn_3 = QPushButton('请添加EXCEL文件')
         self.left_btn_3.setObjectName('left_btn_file')
         self.left_btn_4 = QPushButton('请添加模板文件')
@@ -149,7 +185,7 @@ class MainUI(QMainWindow):
         layout.addWidget(left_chk1_btnUSE, 3, 2, 1, 1)
         layout.addWidget(left_label_1, 5, 0, 1, 3)
         layout.addWidget(self.left_btn_1, 7, 0, 1, 3)
-        layout.addWidget(self.left_btn_2, 20, 0, 1, 3)
+        layout.addWidget(self.left_btn_2, 21, 0, 1, 3)
         layout.addWidget(left_label_2, 11, 0, 1, 3)
         layout.addWidget(left_label_5, 13, 0, 1, 1)
         layout.addWidget(self.left_chk2, 13, 1, 1, 2)
@@ -159,7 +195,9 @@ class MainUI(QMainWindow):
         layout.addWidget(self.left_chk4, 17, 1, 1, 2)
         layout.addWidget(left_label_8, 19, 0, 1, 1)
         layout.addWidget(self.left_chk5, 19, 1, 1, 2)
-        layout.addWidget(left_label_3, 21, 0, 1, 3)
+        layout.addWidget(left_label_10, 20, 0, 1, 1)
+        layout.addWidget(self.left_chk6, 20, 1, 1, 2)
+        layout.addWidget(left_label_3, 22, 0, 1, 3)
         layout.addWidget(self.left_btn_3, 23, 0, 1, 3)
         layout.addWidget(self.left_btn_4, 25, 0, 1, 3)
         layout.addWidget(self.left_btn_5, 27, 0, 1, 3)
@@ -188,19 +226,31 @@ class MainUI(QMainWindow):
 
     def _func_add(self):
         value, ok = QInputDialog.getText(self, '消息框', '请输入新任务名：', QLineEdit.Normal, '工资条发送')
-        alist = []
         if ok:
-            alist.append(value)
-            self.left_chk1.addItems(alist)
-        self.left_chk1.currentText()
-        f = open(self.left_chk1_conf, 'a')
-        f.writelines()
+            self.setting.write_conf(value)
+            self.left_chk1.addItems([value])
+
+
 
     def _func_use(self):
         print('使用')
 
     def _func_mail_file(self):
         print('员工邮箱文件')
+        self.axWidget.clear()
+        file = self.left_btn_1.text()
+        # if not self.axWidget.setControl('Excel.Application'):
+        #     return QMessageBox.critical(self, '错误', '没有安装  %s' % 'Excel.Application')
+        # self.axWidget.dynamicCall(
+        #     'SetVisible (bool Visible)', 'false')  # 不显示窗体
+        # self.axWidget.setProperty('DisplayAlerts', False)
+        # self.axWidget.setControl(self.setting.get_conf(file))
+        # self.axWidget.show()
+        print(self.setting.get_conf(file))
+        os.system('open E:\\Study\\Notify\\conf\\邮箱管理.xlsx')
+
+
+
 
     def _func_change_file(self):
         print('确定发送内容')

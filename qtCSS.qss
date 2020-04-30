@@ -1,6 +1,3 @@
-QLabel#left_label_btn{
-
-}
 QPushButton#left_label{
     border:none;
     border-bottom:1px solid black;
@@ -8,7 +5,7 @@ QPushButton#left_label{
     font-weight:700;
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
-QPushButton#left_btn{border:none;font-size:14px}:hover{font-weight:700;}
+QPushButton#left_btn{border:none;font-size:14px;}:hover{font-weight:700;}
 QPushButton#left_btn_file{border:none;color:blue;}:hover{border-left:4px;font-weight:700;}
 
 (
@@ -20,8 +17,7 @@ QWidget#right_widget{
         border-right:1px solid darkGray;
         border-top-right-radius:10px;
         border-bottom-right-radius:10px;
-    }
-)(
+}
 QWidget#left_widget{
         color:#232C51;
         background:white;
@@ -30,5 +26,5 @@ QWidget#left_widget{
         border-right:1px solid darkGray;
         border-top-left-radius:10px;
         border-bottom-left-radius:10px;
-    }
-    )
+}
+)

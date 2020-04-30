@@ -1,4 +1,4 @@
-import os, time
+import os
 import pandas as pd
 import pythoncom
 from docx import Document
@@ -18,17 +18,20 @@ class FileProcessing(object):
         df = df.where(df.notnull(), '')
         self._df = pd.DataFrame(df)
         self._columns = list(self._df)  # 获取列名
-        return self._df, self._columns
+        return self._columns
 
-    def get_excelData(self, s_str, e_str, to, cc):
-        df, columns = self.get_data
+    def get_excelData(self, s_str, e_str, type, to, cc):
+        columns = self.get_data
 
         # 截取有效数据
         # data = df.iloc[:, columns.index(s_str):columns.index(e_str) + 1]
-        data = pd.concat([df.iloc[:, columns.index(s_str):columns.index(e_str) + 1], df[to]], axis=1)
+        data = pd.concat([self._df.iloc[:, columns.index(s_str):columns.index(e_str) + 1],
+                          self._df[to], self._df[type]], axis=1)
         columns = list(data)
-        # 获取收件人
+        # 获取收件人下标
         to_index = columns.index(to)
+        # 获取信息归属下标
+        type_index = columns.index(type)
         # 获取抄送人，无抄送人则为空
         if cc in columns:
             cc_index = columns.index(cc)
@@ -40,20 +43,21 @@ class FileProcessing(object):
         # 用户 : {to: 发件人，cc: 抄送人，value: [[应发信息1],[应发信息2], ...]}
         for var in data.values:
             if var[to_index] in data_dict.keys():
-                data_dict[var[to_index]]['value'].append(list(var[:to_index]))
+                data_dict[var[type_index]]['value'].append(list(var[:to_index]))
             else:
                 if cc_index:
-                    data_dict[var[to_index]] = {
+                    data_dict[var[type_index]] = {
                         'to': var[to_index],
                         'cc': var[cc_index],
                         'value': [list(var[:to_index])]
                     }
                 else:
-                    data_dict[var[to_index]] = {
+                    data_dict[var[type_index]] = {
                         'to': var[to_index],
                         'cc': None,
                         'value': [list(var[:to_index])]
                     }
+
         return data_dict.items()
 
     ######################################
@@ -76,6 +80,7 @@ class FileProcessing(object):
         doc = Document(doc_model_file)
         doc_table = doc.tables[0]
         for value, col in zip(values, range(len(values))):
+            print(value)
             if col > 0:
                 doc_table.add_row().cells
             for i in range(len(value)):
@@ -132,9 +137,9 @@ if __name__ == '__main__':
     CC = None
     d = FileProcessing(data_file, temp_path)
 
-    datas = d.get_excelData(S, E, TO, CC)
+    datas = d.get_excelData(S, E, TO, TO, CC)
     for name, data in datas:
-        # d.spanned_file(name, data)
+        d.spanned_file(name, data)
         pass
     emails = dict(pd.DataFrame(pd.read_excel(email_file),columns=['名字','邮箱']).values)
     print(emails.get('周凡'))
