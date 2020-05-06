@@ -93,8 +93,10 @@ class MainUI(QMainWindow):
     # 工具栏信息
     def _tools_bar(self):
         self.send_act = QAction(qtawesome.icon('fa.paper-plane', color='white'), '发送邮件', self)
+        self.send_act.setDisabled(True)
         self.generate_act = QAction(qtawesome.icon('fa.play', color='green'), '生成PDF文件', self)
-        self.conversion_act = QAction(qtawesome.icon('fa.random',color='#ebd200'), '转换模式', self)
+        self.generate_act.setDisabled(True)
+        # self.conversion_act = QAction(qtawesome.icon('fa.random',color='#ebd200'), '转换模式', self)
         self.stop_act = QAction(qtawesome.icon('fa.stop', color='red'), '停止',self)
 
         # 按键绑定工具栏
@@ -102,7 +104,7 @@ class MainUI(QMainWindow):
         toolbar.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
         toolbar.addAction(self.send_act)
         toolbar.addAction(self.generate_act)
-        toolbar.addAction(self.conversion_act)
+        # toolbar.addAction(self.conversion_act)
         toolbar.addAction(self.stop_act)
 
         # 按键绑定
@@ -280,24 +282,21 @@ class MainUI(QMainWindow):
         self._func_update_table(self.action.get_data, len(datas), datas, (conf['s_str'], conf['e_str']))
         self._datas = datas
 
-    def _func_update_table(self, col, row, datas, index):
+    def _func_update_table(self, col_header, row, datas, index):
         self.table.deleteLater()
-        s = col.index(index[0])
-        e = col.index(index[1])
-        tableHeader = col[s:e+1]
+        s = col_header.index(index[0])
+        e = col_header.index(index[1])
+        tableHeader = col_header[s:e+1]
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Interactive)
         self.table = QTableWidget()
         self.table.setColumnCount(len(tableHeader))
         self.table.setRowCount(row)
         self.table.setHorizontalHeaderLabels(tableHeader)
-        print(datas)
-        print(len(tableHeader), row)
+
         for data, i in zip(datas, range(row)):
             for var in data[1]['value']:
-                print(var)
                 for j in range(len(var)):
-                    pass
                     self.table.setItem(i, j, QTableWidgetItem(str(var[j])))
         self.right_layout.addWidget(self.table)
 
@@ -333,22 +332,30 @@ class MainUI(QMainWindow):
         self._thread_list.append(start_generate)
         start_generate.start()
 
+
     def _thread_generate(self, emails):
         to = ''
         cc = ''
         datas = self._datas
         if datas:
             for name, data in datas:
-                print(name)
                 print(data)
-                self.action.spanned_file(name, data)
+                # self.action.spanned_file(name, data)
                 try:
-                    for user in data['to'].split(','):
-                        to += emails[user] + ','
+                    for user in data['to'].split('、'):
+                        if user in emails:
+                            to += emails[user]+','
+                        else:
+                            print(user)
+                            to += user+','
+                        # to += emails[user] + ','
+                    print(to)
                     data['to'] = to
                 except Exception as e:
                     print(e)
-        # self.generate_act.setEnabled(True)
+                finally:
+                    print(datas)
+        self.send_act.setEnabled(True)
 
     def _func_stop(self):
         for thread in self._thread_list:

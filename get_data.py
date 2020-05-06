@@ -79,7 +79,7 @@ class FileProcessing(object):
     ######################################
     def _rd_doc(self, name, values):
         doc_new_file = os.path.join(self._TEMP_PATH, "%s.docx" % name)
-        print(self._doc_model)
+        # print(self._doc_model)
         doc = Document(self._doc_model)
         doc_table = doc.tables[0]
         for value, col in zip(values, range(len(values))):
@@ -87,7 +87,7 @@ class FileProcessing(object):
             if col > 0:
                 doc_table.add_row().cells
             for i in range(len(value)):
-                print('<%s>'%value[i],end=' ')
+                # print('<%s>'%value[i],end=' ')
                 run = doc_table.cell(col + 1, i).paragraphs[0]
                 run.paragraph_format.alignment = WD_TABLE_ALIGNMENT.CENTER
                 print(isinstance(value[i], str))
@@ -97,7 +97,7 @@ class FileProcessing(object):
                     run = run.add_run(str(value[i].strftime("%Y-%m-%d")))
 
                 run.font.size = 100000
-            print()
+            # print()
         doc.save(doc_new_file)
         return doc_new_file
 
