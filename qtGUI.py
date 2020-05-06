@@ -2,6 +2,7 @@ import sys, cgitb, os
 import qtawesome
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QGridLayout, QAction, qApp, QMenu, QPushButton,
                              QLabel, QComboBox,QTableWidget, QMessageBox, QInputDialog, QLineEdit,QFileDialog,
+                             QTableWidgetItem, QHeaderView
                              )
 from PyQt5.QtCore import Qt
 from PyQt5.QAxContainer import QAxWidget
@@ -16,9 +17,14 @@ class MainUI(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.BASE_DIR = os.getcwd()
-        self._init_ui()
-        self._load_setting()
+        # self.BASE_DIR = os.getcwd()
+        try:
+            self._init_ui()
+            self._load_setting()
+        except Exception as e:
+            QMessageBox.critical(self, '错误', '%s' % e)
+        # self._init_ui()
+        # self._load_setting()
         self.show()
 
     def _init_ui(self):
@@ -42,8 +48,8 @@ class MainUI(QMainWindow):
         # 创建右侧部件
         right_widget = QWidget()
         right_widget.setObjectName('right_widget')
-        right_layout = QGridLayout()
-        right_widget.setLayout(right_layout)
+        self.right_layout = QGridLayout()
+        right_widget.setLayout(self.right_layout)
 
         # 菜单栏设置
         # self._menu_bar()
@@ -55,7 +61,7 @@ class MainUI(QMainWindow):
         self._left_layout(left_layout)
 
         # 右侧信息
-        self._right_layout(right_layout)
+        self._right_layout(self.right_layout)
 
         main_layout.addWidget(left_widget, 0,0, 12, 2)
         main_layout.addWidget(right_widget, 0, 2, 12, 10)
@@ -224,13 +230,12 @@ class MainUI(QMainWindow):
         self.left_btn_5.clicked.connect(self._func_html_file)
 
     # 右侧显示信息
-    def _right_layout(self, layout):
+    def _right_layout(self, layout, *args):
         tableHeader = ['日期', '公司', '金额', '报销人']
         self.table = QTableWidget()
         self.table.setColumnCount(4)
         self.table.setRowCount(3)
         self.table.setHorizontalHeaderLabels(tableHeader)
-
         layout.addWidget(self.table)
 
     def _func_add(self):
@@ -266,6 +271,29 @@ class MainUI(QMainWindow):
         conf['to'] = self.left_chk5.currentText()
         conf['cc'] = self.left_chk6.currentText()
         self.setting.write_conf(conf)
+        datas = self.action.get_excelData(conf['s_str'], conf['e_str'], conf['type'], conf['to'], conf['cc'])
+        self._func_update_table(self.action.get_data, len(datas), datas, (conf['s_str'], conf['e_str']))
+
+    def _func_update_table(self, col, row, datas, index):
+        self.table.deleteLater()
+        s = col.index(index[0])
+        e = col.index(index[1])
+        tableHeader = col[s:e]
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Interactive)
+        self.table = QTableWidget()
+        self.table.setColumnCount(len(col))
+        self.table.setRowCount(row)
+        self.table.setHorizontalHeaderLabels(tableHeader)
+        print(col, row)
+        for data, i in zip(datas, range(row)):
+            for var in data[1]['value']:
+                print(var)
+                for j in range(len(var)):
+                    pass
+                    self.table.setItem(i, j, QTableWidgetItem(str(var[j])))
+        self.right_layout.addWidget(self.table)
+
 
     def _func_execl_file(self):
         print('请添加execl文件')
