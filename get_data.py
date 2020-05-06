@@ -88,7 +88,7 @@ class FileProcessing(object):
                 doc_table.add_row().cells
             for i in range(len(value)):
                 print('<%s>'%value[i],end=' ')
-                run = doc_table.cell(col + 1, 0).paragraphs[0]
+                run = doc_table.cell(col + 1, i).paragraphs[0]
                 run.paragraph_format.alignment = WD_TABLE_ALIGNMENT.CENTER
                 print(isinstance(value[i], str))
                 if isinstance(value[i], str) or isinstance(value[i], int):

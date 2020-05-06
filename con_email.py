@@ -9,11 +9,10 @@ def load_file(path):
     df = DataFrame(read_excel(path))
     return dict(df.values)
 
-def _send_mail(*args):
+def send_mail(*args):
 
     email_host, email_port, mail_name, mail_passwd, mail_name_phone, name, month,\
     row_name, row_email, pdf_name, pdf_file = args
-    #print("%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n"%(email_host, email_port, mail_name, mail_passwd, name, month,row_name, row_email, pdf_file, pdf_name))
     sub = "%s工资条-%s"
     server = smtplib.SMTP_SSL(email_host, email_port)
     server.login(mail_name, mail_passwd)

@@ -2,7 +2,7 @@ import sys, cgitb, os
 import qtawesome
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QGridLayout, QAction, qApp, QMenu, QPushButton,
                              QLabel, QComboBox,QTableWidget, QMessageBox, QInputDialog, QLineEdit,QFileDialog,
-                             QTableWidgetItem, QHeaderView
+                             QTableWidgetItem, QHeaderView, QDialog
                              )
 from PyQt5.QtCore import Qt
 from PyQt5.QAxContainer import QAxWidget
@@ -11,7 +11,7 @@ from PyQt5.QtGui import QPixmap
 
 from setting import Setting
 from get_data import FileProcessing
-from con_email import load_file
+from con_email import load_file, send_mail
 from Mythreading import MyThread
 
 
@@ -39,6 +39,7 @@ class MainUI(QMainWindow):
         main_widget.setLayout(main_layout)
         self.setting = Setting()
         self._datas = None
+        self._thread_list = []
 
         # self.statusBar().showMessage("状态栏")
 
@@ -55,7 +56,7 @@ class MainUI(QMainWindow):
         right_widget.setLayout(self.right_layout)
 
         # 菜单栏设置
-        # self._menu_bar()
+        self._menu_bar()
 
         # 工具栏
         self._tools_bar()
@@ -66,7 +67,7 @@ class MainUI(QMainWindow):
         # 右侧信息
         self._right_layout(self.right_layout)
 
-        main_layout.addWidget(left_widget, 0,0, 12, 2)
+        main_layout.addWidget(left_widget, 0, 0, 12, 2)
         main_layout.addWidget(right_widget, 0, 2, 12, 10)
         self.setCentralWidget(main_widget)
         # self.setWindowFlag(Qt.FramelessWindowHint)  # 隐藏边框
@@ -76,23 +77,25 @@ class MainUI(QMainWindow):
 
     # 菜单栏信息
     def _menu_bar(self):
-        open_act = QAction('设置', self)
+        mail_act = QAction('邮箱设置', self)
         about_act = QAction('关于', self)
 
         menu_bar = self.menuBar()
 
         file_menu = menu_bar.addMenu('文件')
-        file_menu.addAction(open_act)
+        file_menu.addAction(mail_act)
 
         help_menu = menu_bar.addMenu('帮助')
         help_menu.addAction(about_act)
+
+        mail_act.triggered.connect(self._func_set_mail)
 
     # 工具栏信息
     def _tools_bar(self):
         self.send_act = QAction(qtawesome.icon('fa.paper-plane', color='white'), '发送邮件', self)
         self.generate_act = QAction(qtawesome.icon('fa.play', color='green'), '生成PDF文件', self)
         self.conversion_act = QAction(qtawesome.icon('fa.random',color='#ebd200'), '转换模式', self)
-        self.stop = QAction(qtawesome.icon('fa.stop', color='red'), '停止',self)
+        self.stop_act = QAction(qtawesome.icon('fa.stop', color='red'), '停止',self)
 
         # 按键绑定工具栏
         toolbar = self.addToolBar('操作')
@@ -100,11 +103,12 @@ class MainUI(QMainWindow):
         toolbar.addAction(self.send_act)
         toolbar.addAction(self.generate_act)
         toolbar.addAction(self.conversion_act)
-        toolbar.addAction(self.stop)
+        toolbar.addAction(self.stop_act)
 
         # 按键绑定
         self.send_act.triggered.connect(self._func_send)
         self.generate_act.triggered.connect(self._func_generate)
+        self.stop_act.triggered.connect(self._func_stop)
 
     # 配置文件加载
     def _load_setting(self, task=None):
@@ -264,6 +268,7 @@ class MainUI(QMainWindow):
 
     def _func_sure_file(self):
         print('确定发送内容')
+        self.generate_act.setEnabled(True)
         conf = self.setting.conf_ini
         conf['s_str'] = self.left_chk2.currentText()
         conf['e_str'] = self.left_chk3.currentText()
@@ -318,14 +323,15 @@ class MainUI(QMainWindow):
     def _func_send(self):
         print('发送成功')
         self.send_act.setDisabled(True)
+        send_mail()
 
     def _func_generate(self):
         print('生成附件')
         self.generate_act.setDisabled(True)
         emails = load_file(self.setting.get_conf(self.left_btn_1.text()))
-        self.start_generate = MyThread(target=self._thread_generate, args=(emails, ))
-        self.start_generate.start()
-
+        start_generate = MyThread(target=self._thread_generate, args=(emails, ))
+        self._thread_list.append(start_generate)
+        start_generate.start()
 
     def _thread_generate(self, emails):
         to = ''
@@ -342,10 +348,14 @@ class MainUI(QMainWindow):
                     data['to'] = to
                 except Exception as e:
                     print(e)
-        self.generate_act.setEnabled(True)
+        # self.generate_act.setEnabled(True)
 
+    def _func_stop(self):
+        for thread in self._thread_list:
+            thread.stop()
 
-
+    def _func_set_mail(self):
+        dialog = ShowDialog()
 
     # 鼠标移动窗口
     # def mousePressEvent(self, event):
@@ -363,6 +373,22 @@ class MainUI(QMainWindow):
     # def mouseReleaseEvent(self, QMouseEvent):
     #     self.m_flag = False
     #     self.setCursor(QCursor(Qt.ArrowCursor))
+
+
+class ShowDialog(QDialog):
+
+    def __init__(self):
+        super().__init__()
+        self._init()
+        self.exec_()
+
+    def _init(self):
+        self.setWindowTitle('aaa')
+        self.setFixedSize(300, 400)
+        self.setWindowModality(Qt.ApplicationModal)
+
+
+
 
 
 
