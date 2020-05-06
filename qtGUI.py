@@ -11,6 +11,8 @@ from PyQt5.QtGui import QPixmap
 
 from setting import Setting
 from get_data import FileProcessing
+from con_email import load_file
+from Mythreading import MyThread
 
 
 class MainUI(QMainWindow):
@@ -36,6 +38,7 @@ class MainUI(QMainWindow):
         main_layout = QGridLayout()
         main_widget.setLayout(main_layout)
         self.setting = Setting()
+        self._datas = None
 
         # self.statusBar().showMessage("状态栏")
 
@@ -123,23 +126,21 @@ class MainUI(QMainWindow):
         self.left_btn_3.setText(conf['data_execl'])
         self.left_btn_4.setText(conf['model_word'])
         self.left_btn_5.setText(conf['model_html'])
-        self.action = FileProcessing(self.setting.get_model(self.left_btn_3.text()), self.setting.TEMP_DIR)
+        self.action = FileProcessing(self.setting.get_model(self.left_btn_3.text()), self.setting.TEMP_DIR,
+                                     self.setting.get_model(self.left_btn_4.text()))
         header_list = self.action.get_data
-        self.left_chk2.clear()
-        self.left_chk2.addItems(header_list)
-        self.left_chk2.setCurrentIndex(header_list.index(conf['s_str']))
-        self.left_chk3.clear()
-        self.left_chk3.addItems(header_list)
-        self.left_chk3.setCurrentIndex(header_list.index(conf['e_str']))
-        self.left_chk4.clear()
-        self.left_chk4.addItems(header_list)
-        self.left_chk4.setCurrentIndex(header_list.index(conf['type']))
-        self.left_chk5.clear()
-        self.left_chk5.addItems(header_list)
-        self.left_chk5.setCurrentIndex(header_list.index(conf['to']))
-        self.left_chk6.clear()
-        self.left_chk6.addItems(header_list)
-        self.left_chk6.setCurrentIndex(header_list.index(conf['cc']))
+        btn_list = [self.left_chk2, self.left_chk3, self.left_chk4, self.left_chk5, self.left_chk6]
+        btn_str = ['s_str', 'e_str', 'type', 'to', 'cc']
+        try:
+            for i in range(len(btn_list)):
+                btn_list[i].clear()
+                btn_list[i].addItems(header_list)
+                if conf[btn_str[i]] in header_list:
+                    btn_list[i].setCurrentIndex(header_list.index(conf[btn_str[i]]))
+                else:
+                    pass
+        except Exception as e:
+            print(e)
 
     # 左侧显示信息
     def _left_layout(self, layout):
@@ -169,7 +170,6 @@ class MainUI(QMainWindow):
 
 
         self.left_chk1 = QComboBox()
-
         left_chk1_btnADD = QPushButton('新建')
         left_chk1_btnADD.setObjectName('left_btn')
         left_chk1_btnUSE = QPushButton('使用')
@@ -224,7 +224,7 @@ class MainUI(QMainWindow):
         left_chk1_btnADD.clicked.connect(self._func_add)
         left_chk1_btnUSE.clicked.connect(self._func_use)
         self.left_btn_1.clicked.connect(self._func_mail_file)
-        self.left_btn_2.clicked.connect(self._func_change_file)
+        self.left_btn_2.clicked.connect(self._func_sure_file)
         self.left_btn_3.clicked.connect(self._func_execl_file)
         self.left_btn_4.clicked.connect(self._func_word_file)
         self.left_btn_5.clicked.connect(self._func_html_file)
@@ -262,7 +262,7 @@ class MainUI(QMainWindow):
         # self.axWidget.setControl(self.setting.get_conf(file))
         # self.axWidget.show()
 
-    def _func_change_file(self):
+    def _func_sure_file(self):
         print('确定发送内容')
         conf = self.setting.conf_ini
         conf['s_str'] = self.left_chk2.currentText()
@@ -273,19 +273,21 @@ class MainUI(QMainWindow):
         self.setting.write_conf(conf)
         datas = self.action.get_excelData(conf['s_str'], conf['e_str'], conf['type'], conf['to'], conf['cc'])
         self._func_update_table(self.action.get_data, len(datas), datas, (conf['s_str'], conf['e_str']))
+        self._datas = datas
 
     def _func_update_table(self, col, row, datas, index):
         self.table.deleteLater()
         s = col.index(index[0])
         e = col.index(index[1])
-        tableHeader = col[s:e]
+        tableHeader = col[s:e+1]
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Interactive)
         self.table = QTableWidget()
-        self.table.setColumnCount(len(col))
+        self.table.setColumnCount(len(tableHeader))
         self.table.setRowCount(row)
         self.table.setHorizontalHeaderLabels(tableHeader)
-        print(col, row)
+        print(datas)
+        print(len(tableHeader), row)
         for data, i in zip(datas, range(row)):
             for var in data[1]['value']:
                 print(var)
@@ -319,6 +321,31 @@ class MainUI(QMainWindow):
 
     def _func_generate(self):
         print('生成附件')
+        self.generate_act.setDisabled(True)
+        emails = load_file(self.setting.get_conf(self.left_btn_1.text()))
+        self.start_generate = MyThread(target=self._thread_generate, args=(emails, ))
+        self.start_generate.start()
+
+
+    def _thread_generate(self, emails):
+        to = ''
+        cc = ''
+        datas = self._datas
+        if datas:
+            for name, data in datas:
+                print(name)
+                print(data)
+                self.action.spanned_file(name, data)
+                try:
+                    for user in data['to'].split(','):
+                        to += emails[user] + ','
+                    data['to'] = to
+                except Exception as e:
+                    print(e)
+        self.generate_act.setEnabled(True)
+
+
+
 
     # 鼠标移动窗口
     # def mousePressEvent(self, event):

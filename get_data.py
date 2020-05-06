@@ -8,8 +8,9 @@ from win32com import client
 
 class FileProcessing(object):
 
-    def __init__(self, data, tmpPath):
+    def __init__(self, data, tmpPath, doc_model):
         self._data_file = data
+        self._doc_model = doc_model
         self._TEMP_PATH = tmpPath
 
     @property
@@ -50,13 +51,13 @@ class FileProcessing(object):
                     data_dict[var[type_index]] = {
                         'to': var[to_index],
                         'cc': var[cc_index],
-                        'value': [list(var[:to_index])]
+                        'value': [list(var[:columns.index(e_str)+1])]
                     }
                 else:
                     data_dict[var[type_index]] = {
                         'to': var[to_index],
                         'cc': None,
-                        'value': [list(var[:to_index])]
+                        'value': [list(var[:columns.index(e_str)+1])]
                     }
 
         return data_dict.items()
@@ -78,24 +79,25 @@ class FileProcessing(object):
     ######################################
     def _rd_doc(self, name, values):
         doc_new_file = os.path.join(self._TEMP_PATH, "%s.docx" % name)
-        doc = Document(doc_model_file)
+        print(self._doc_model)
+        doc = Document(self._doc_model)
         doc_table = doc.tables[0]
         for value, col in zip(values, range(len(values))):
-            print(value)
+            # print(value)
             if col > 0:
                 doc_table.add_row().cells
             for i in range(len(value)):
-                # print('<%s>'%value[i],end=' ')
-                if i == 0:
-                    run = doc_table.cell(col+1, 0).paragraphs[0]
-                    run.paragraph_format.alignment = WD_TABLE_ALIGNMENT.CENTER
-                    run = run.add_run(str(value[0].strftime("%Y-%m-%d")))
-                else:
-                    run = doc_table.cell(col+1, i).paragraphs[0]
-                    run.paragraph_format.alignment = WD_TABLE_ALIGNMENT.CENTER
+                print('<%s>'%value[i],end=' ')
+                run = doc_table.cell(col + 1, 0).paragraphs[0]
+                run.paragraph_format.alignment = WD_TABLE_ALIGNMENT.CENTER
+                print(isinstance(value[i], str))
+                if isinstance(value[i], str) or isinstance(value[i], int):
                     run = run.add_run(str(value[i]))
+                else:
+                    run = run.add_run(str(value[i].strftime("%Y-%m-%d")))
+
                 run.font.size = 100000
-            # print()
+            print()
         doc.save(doc_new_file)
         return doc_new_file
 
