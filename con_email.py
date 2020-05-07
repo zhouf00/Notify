@@ -9,6 +9,45 @@ def load_file(path):
     df = DataFrame(read_excel(path))
     return dict(df.values)
 
+
+class SendMail(object):
+
+    def __init__(self, *args):
+        email_host, email_port, mail_name, mail_passwd, from_phone, from_name, month, header = args
+        server = smtplib.SMTP_SSL(email_host, email_port)
+        server.login(mail_name, mail_passwd)
+        self._server = server
+        self._from = ("%s<%s>")%(from_name, mail_name)
+        self._from_name = from_name
+        self._from_phone = from_phone
+
+    def send(self, attachment, to_user, to, cc, file):
+        message = MIMEMultipart()
+        message['Subject'] = None   # 标题
+        message['From'] = self._from  # 发件人
+        message['To'] = to    # 收件人
+        message['Cc'] = cc    # 抄送人
+
+        # 加入正文
+        # 加入签名
+        html = sign_names(to_user, month, name, mail_name, self._from_phone)
+        msgText = MIMEText(html, 'html', 'utf-8')
+        message.attach(msgText)
+
+        # 添加附件
+        pdfpart = MIMEApplication(open(file, 'rb').read())
+        # 设置附件头
+        pdfpart.add_header('Content-Disposition', 'attachment', filename=('gbk', '', attachment))
+        message.attach(pdfpart)
+
+        try:
+            self._server.sendmail(self._from, to, message.as_string())
+        except Exception as e:
+            # print(e)
+            return "<%s>发送失败\n" % (to_user)
+        else:
+            return "<%s>发送成功\n" % (to_user)
+
 def send_mail(*args):
 
     email_host, email_port, mail_name, mail_passwd, mail_name_phone, name, month,\

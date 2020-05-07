@@ -5,7 +5,8 @@ from PyQt5.QtCore import QThread, pyqtSignal
 
 class MyThread(QThread):
 
-    counter_value = pyqtSignal(int)
+    counter_value = pyqtSignal()
+    # _layout = pyqtSignal()
 
     def __init__(self, target, args, name=""):
         QThread.__init__(self)

@@ -65,12 +65,22 @@ class Setting(object):
         with open(new_ini, 'w', encoding='utf8') as f:
             f.write(self._info_conf(task))
 
-    def write_conf(self, datas):
-        with open(os.path.join(self._CONF_DIR, self._task_ini[self._task_name]),
+    def write_conf(self, datas, file=None):
+        if not file:
+            file = os.path.join(self._CONF_DIR, self._task_ini[self._task_name])
+        with open(file,
                   'w', encoding='utf8') as f:
             for key, value in datas.items():
                 print(key, value)
                 f.writelines('%s=%s\n'%(key, value))
+
+    def get_data(self, file):
+        with open(file, 'r', encoding="utf8") as f:
+            conf_dict = {}
+            for var in f.readlines():
+                key, value = var.strip().split('=')
+                conf_dict[key] = value
+        return conf_dict
 
     def get_conf(self, file):
         return os.path.join(self._CONF_DIR, file)

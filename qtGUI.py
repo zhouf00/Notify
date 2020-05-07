@@ -93,10 +93,11 @@ class MainUI(QMainWindow):
     # 工具栏信息
     def _tools_bar(self):
         self.send_act = QAction(qtawesome.icon('fa.paper-plane', color='white'), '发送邮件', self)
-        self.send_act.setDisabled(True)
+        # self.send_act.setDisabled(True)
         self.generate_act = QAction(qtawesome.icon('fa.play', color='green'), '生成PDF文件', self)
         self.generate_act.setDisabled(True)
-        # self.conversion_act = QAction(qtawesome.icon('fa.random',color='#ebd200'), '转换模式', self)
+        self.mailfresh_act = QAction(qtawesome.icon('fa.refresh',color='green'), '邮箱数据刷新', self)
+        self.mailfresh_act.setDisabled(True)
         self.stop_act = QAction(qtawesome.icon('fa.stop', color='red'), '停止',self)
 
         # 按键绑定工具栏
@@ -104,12 +105,13 @@ class MainUI(QMainWindow):
         toolbar.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
         toolbar.addAction(self.send_act)
         toolbar.addAction(self.generate_act)
-        # toolbar.addAction(self.conversion_act)
+        toolbar.addAction(self.mailfresh_act)
         toolbar.addAction(self.stop_act)
 
         # 按键绑定
         self.send_act.triggered.connect(self._func_send)
         self.generate_act.triggered.connect(self._func_generate)
+        self.mailfresh_act.triggered.connect(self._func_mailfresh)
         self.stop_act.triggered.connect(self._func_stop)
 
     # 配置文件加载
@@ -136,7 +138,7 @@ class MainUI(QMainWindow):
                                      self.setting.get_model(self.left_btn_4.text()))
         header_list = self.action.get_data
         btn_list = [self.left_chk2, self.left_chk3, self.left_chk4, self.left_chk5, self.left_chk6]
-        btn_str = ['s_str', 'e_str', 'type', 'to', 'cc']
+        btn_str = ['s_str', 'e_str', 'type', 'to_user', 'cc_user']
         try:
             for i in range(len(btn_list)):
                 btn_list[i].clear()
@@ -146,7 +148,7 @@ class MainUI(QMainWindow):
                 else:
                     pass
         except Exception as e:
-            print(e)
+            print('报错%s'%e)
 
     # 左侧显示信息
     def _left_layout(self, layout):
@@ -236,7 +238,7 @@ class MainUI(QMainWindow):
         self.left_btn_5.clicked.connect(self._func_html_file)
 
     # 右侧显示信息
-    def _right_layout(self, layout, *args):
+    def _right_layout(self, layout):
         tableHeader = ['日期', '公司', '金额', '报销人']
         self.table = QTableWidget()
         self.table.setColumnCount(4)
@@ -255,7 +257,6 @@ class MainUI(QMainWindow):
         self._load_setting(task)
 
     def _func_mail_file(self, e):
-        print('员工邮箱文件')
         self.axWidget.clear()
         file = self.left_btn_1.text()
         os.system('explorer %s'%self.setting.get_conf(file))
@@ -271,95 +272,137 @@ class MainUI(QMainWindow):
     def _func_sure_file(self):
         print('确定发送内容')
         self.generate_act.setEnabled(True)
+        if self.send_act.isEnabled():
+            self.send_act.setDisabled(True)
+            self.mailfresh_act.setDisabled(True)
         conf = self.setting.conf_ini
         conf['s_str'] = self.left_chk2.currentText()
         conf['e_str'] = self.left_chk3.currentText()
         conf['type'] = self.left_chk4.currentText()
-        conf['to'] = self.left_chk5.currentText()
-        conf['cc'] = self.left_chk6.currentText()
+        conf['to_user'] = self.left_chk5.currentText()
+        conf['cc_user'] = self.left_chk6.currentText()
         self.setting.write_conf(conf)
-        datas = self.action.get_excelData(conf['s_str'], conf['e_str'], conf['type'], conf['to'], conf['cc'])
+        datas = self.action.get_excelData(conf['s_str'], conf['e_str'], conf['type'], conf['to_user'], conf['cc_user'])
         self._func_update_table(self.action.get_data, len(datas), datas, (conf['s_str'], conf['e_str']))
         self._datas = datas
 
-    def _func_update_table(self, col_header, row, datas, index):
+    def _func_update_table(self, col_header, row, datas, index=None):
         self.table.deleteLater()
-        s = col_header.index(index[0])
-        e = col_header.index(index[1])
-        tableHeader = col_header[s:e+1]
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Interactive)
         self.table = QTableWidget()
-        self.table.setColumnCount(len(tableHeader))
         self.table.setRowCount(row)
-        self.table.setHorizontalHeaderLabels(tableHeader)
+        if index:
+            s = col_header.index(index[0])
+            e = col_header.index(index[1])
+            tableHeader = col_header[s:e+1]
+            self.table.setColumnCount(len(tableHeader))
+            self.table.setHorizontalHeaderLabels(tableHeader)
+            # self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+            # self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Interactive)
+            for data, i in zip(datas, range(row)):
+                for var in data[1]['value']:
+                    for j in range(len(var)):
+                        self.table.setItem(i, j, QTableWidgetItem(str(var[j])))
+        else:
+            tableHeader = col_header
+            self.table.setColumnCount(len(tableHeader))
+            self.table.setHorizontalHeaderLabels(tableHeader)
 
-        for data, i in zip(datas, range(row)):
-            for var in data[1]['value']:
-                for j in range(len(var)):
-                    self.table.setItem(i, j, QTableWidgetItem(str(var[j])))
         self.right_layout.addWidget(self.table)
 
-
     def _func_execl_file(self):
-        print('请添加execl文件')
+        # print('请添加execl文件')
         file = self.left_btn_3.text()
-        print(self.setting.get_model(file))
+        # print(self.setting.get_model(file))
         os.system('explorer %s' % self.setting.get_model(file)) # 打开文件
 
     def _func_word_file(self):
-        print('请添加word文件')
+        # print('请添加word文件')
         file = self.left_btn_4.text()
-        print(self.setting.get_model(file))
+        # print(self.setting.get_model(file))
         os.system('explorer %s' % self.setting.get_model(file))  # 打开文件
 
     def _func_html_file(self):
-        print('请添加html文件')
+        # print('请添加html文件')
         file = self.left_btn_5.text()
-        print(self.setting.get_model(file))
+        # print(self.setting.get_model(file))
         os.system('explorer %s' % self.setting.get_model(file))  # 打开文件
 
     def _func_send(self):
         print('发送成功')
         self.send_act.setDisabled(True)
-        send_mail()
+        mail_conf = self.setting.get_data(self.setting.get_conf('mail_conf.ini'))
+        start_send = MyThread(target=self._thread_send, args=(mail_conf, self._datas, ))
+        self._thread_list.append(start_send)
+        start_send.start()
+
+    def _thread_send(self, mail_conf, datas):
+        for name, data in datas:
+            print(name, data['to_user'], data['to'], data['cc'], data['file'])
 
     def _func_generate(self):
-        print('生成附件')
+        header = ['收件人', '抄送人', '文件']
         self.generate_act.setDisabled(True)
+        self.mailfresh_act.setEnabled(True)
         emails = load_file(self.setting.get_conf(self.left_btn_1.text()))
+        self._func_update_table(header, len(self._datas), None)
         start_generate = MyThread(target=self._thread_generate, args=(emails, ))
         self._thread_list.append(start_generate)
         start_generate.start()
 
-
-    def _thread_generate(self, emails):
-        to = ''
-        cc = ''
+    def _thread_generate(self, emails, flag=True):
         datas = self._datas
+        # user_list = ['to_user', 'cc_user']
+        val_list = ['to', 'cc', 'file']
         if datas:
-            for name, data in datas:
-                print(data)
-                # self.action.spanned_file(name, data)
+            for (name, data), i in zip(datas, range(len(datas))):
+                if flag:
+                    self.action.spanned_file(name, data)
+                to = ''
+                cc = ''
                 try:
-                    for user in data['to'].split('、'):
-                        if user in emails:
+                    for user in data['to_user'].strip().split('、'):
+                        if not user:
+                            pass
+                        elif user in emails:
                             to += emails[user]+','
                         else:
-                            print(user)
                             to += user+','
-                        # to += emails[user] + ','
-                    print(to)
+                    if 'cc_user' in data and data['cc_user']:
+                        for user in data['cc_user'].strip().split('、'):
+                            if not user:
+                                pass
+                            elif user in emails:
+                                cc += emails[user] + ','
+                            else:
+                                cc += user + ','
                     data['to'] = to
+                    if cc:
+                        data['cc'] = cc
+                    else:
+                        data['cc'] = ''
+                    for j in range(len(val_list)):
+                        self.table.setItem(i, j, QTableWidgetItem('%s'%data[val_list[j]]))
                 except Exception as e:
                     print(e)
                 finally:
                     print(datas)
-        self.send_act.setEnabled(True)
+            # self._func_update_table(header, len(datas), datas)
+            if not self.send_act.isEnabled():
+                self.send_act.setEnabled(True)
+        else:
+            pass
+
+    def _func_mailfresh(self):
+        emails = load_file(self.setting.get_conf(self.left_btn_1.text()))
+        self._thread_generate(emails, flag=False)
+
 
     def _func_stop(self):
-        for thread in self._thread_list:
-            thread.stop()
+        pass
+        print(self.send_act.isEnabled())
+        print(self.generate_act.isEnabled())
+        # for thread in self._thread_list:
+        #     thread.stop()
 
     def _func_set_mail(self):
         dialog = ShowDialog()
@@ -393,10 +436,6 @@ class ShowDialog(QDialog):
         self.setWindowTitle('aaa')
         self.setFixedSize(300, 400)
         self.setWindowModality(Qt.ApplicationModal)
-
-
-
-
 
 
 if __name__ == '__main__':

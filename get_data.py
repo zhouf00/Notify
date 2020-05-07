@@ -24,11 +24,11 @@ class FileProcessing(object):
 
     def get_excelData(self, s_str, e_str, type, to, cc):
         columns = self.get_data
-
+        print(columns)
         # 截取有效数据
         # data = df.iloc[:, columns.index(s_str):columns.index(e_str) + 1]
         data = pd.concat([self._df.iloc[:, columns.index(s_str):columns.index(e_str) + 1],
-                          self._df[to], self._df[type]], axis=1)
+                          self._df[to], self._df[type], self._df[cc]], axis=1)
         columns = list(data)
         # 获取收件人下标
         to_index = columns.index(to)
@@ -39,7 +39,6 @@ class FileProcessing(object):
             cc_index = columns.index(cc)
         else:
             cc_index = None
-
         data_dict = dict()
         # 将数据转化为字典格式
         # 用户 : {to: 发件人，cc: 抄送人，value: [[应发信息1],[应发信息2], ...]}
@@ -49,14 +48,14 @@ class FileProcessing(object):
             else:
                 if cc_index:
                     data_dict[var[type_index]] = {
-                        'to': var[to_index],
-                        'cc': var[cc_index],
+                        'to_user': var[to_index],
+                        'cc_user': var[cc_index],
                         'value': [list(var[:columns.index(e_str)+1])]
                     }
                 else:
                     data_dict[var[type_index]] = {
-                        'to': var[to_index],
-                        'cc': None,
+                        'to_user': var[to_index],
+                        'cc_user': '',
                         'value': [list(var[:columns.index(e_str)+1])]
                     }
 
