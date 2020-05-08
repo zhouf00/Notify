@@ -24,7 +24,6 @@ class FileProcessing(object):
 
     def get_excelData(self, s_str, e_str, type, to, cc):
         columns = self.get_data
-        print(columns)
         # 截取有效数据
         # data = df.iloc[:, columns.index(s_str):columns.index(e_str) + 1]
         data = pd.concat([self._df.iloc[:, columns.index(s_str):columns.index(e_str) + 1],
@@ -36,12 +35,13 @@ class FileProcessing(object):
         type_index = columns.index(type)
         # 获取抄送人，无抄送人则为空
         if cc in columns:
-            cc_index = columns.index(cc)
+            cc_index = len(columns)
         else:
             cc_index = None
         data_dict = dict()
         # 将数据转化为字典格式
         # 用户 : {to: 发件人，cc: 抄送人，value: [[应发信息1],[应发信息2], ...]}
+        print(cc_index)
         for var in data.values:
             if var[to_index] in data_dict.keys():
                 data_dict[var[type_index]]['value'].append(list(var[:to_index]))
@@ -89,7 +89,7 @@ class FileProcessing(object):
                 # print('<%s>'%value[i],end=' ')
                 run = doc_table.cell(col + 1, i).paragraphs[0]
                 run.paragraph_format.alignment = WD_TABLE_ALIGNMENT.CENTER
-                print(isinstance(value[i], str))
+                # print(isinstance(value[i], str))
                 if isinstance(value[i], str) or isinstance(value[i], int):
                     run = run.add_run(str(value[i]))
                 else:

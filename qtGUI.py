@@ -11,7 +11,7 @@ from PyQt5.QtGui import QPixmap
 
 from setting import Setting
 from get_data import FileProcessing
-from con_email import load_file, send_mail
+from con_email import load_file, SendMail
 from Mythreading import MyThread
 
 
@@ -336,8 +336,13 @@ class MainUI(QMainWindow):
         start_send.start()
 
     def _thread_send(self, mail_conf, datas):
+        send_mail = SendMail(mail_conf.values())
+        html = send_mail.get_html(self.setting.get_model(self.left_btn_5.text()))
         for name, data in datas:
             print(name, data['to_user'], data['to'], data['cc'], data['file'])
+            send_mail.send(name, data['to_user'], data['to'], data['cc'], data['file'],
+                           html)
+
 
     def _func_generate(self):
         header = ['收件人', '抄送人', '文件']

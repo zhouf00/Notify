@@ -13,31 +13,40 @@ def load_file(path):
 class SendMail(object):
 
     def __init__(self, *args):
-        email_host, email_port, mail_name, mail_passwd, from_phone, from_name, month, header = args
+        email_host, email_port, mail_name, mail_passwd, from_phone, from_name, text, header = args[0]
         server = smtplib.SMTP_SSL(email_host, email_port)
         server.login(mail_name, mail_passwd)
         self._server = server
         self._from = ("%s<%s>")%(from_name, mail_name)
         self._from_name = from_name
         self._from_phone = from_phone
+        self._text = text
+        self._header = header
 
-    def send(self, attachment, to_user, to, cc, file):
+    def send(self, attachment, to_user, to, cc, file, html):
         message = MIMEMultipart()
-        message['Subject'] = None   # 标题
+        message['Subject'] = self._text + self._header   # 标题
         message['From'] = self._from  # 发件人
         message['To'] = to    # 收件人
         message['Cc'] = cc    # 抄送人
 
         # 加入正文
         # 加入签名
-        html = sign_names(to_user, month, name, mail_name, self._from_phone)
+        html_dict = {
+            'to_user': to_user,
+            'text': self._text,
+            'from_name': self._from_name,
+            'from_phone': self._from_phone,
+            'from_mail': self._from
+        }
+        html = html.format(**html_dict)
         msgText = MIMEText(html, 'html', 'utf-8')
         message.attach(msgText)
 
         # 添加附件
         pdfpart = MIMEApplication(open(file, 'rb').read())
         # 设置附件头
-        pdfpart.add_header('Content-Disposition', 'attachment', filename=('gbk', '', attachment))
+        pdfpart.add_header('Content-Disposition', 'attachment', filename=('gbk', '', '%s.pdf'%attachment))
         message.attach(pdfpart)
 
         try:
@@ -47,6 +56,12 @@ class SendMail(object):
             return "<%s>发送失败\n" % (to_user)
         else:
             return "<%s>发送成功\n" % (to_user)
+
+    def get_html(self, file):
+        with open(file, 'r', encoding='utf8') as f:
+            html = f.read()
+            return html
+
 
 def send_mail(*args):
 
