@@ -17,7 +17,7 @@ class SendMail(object):
         server = smtplib.SMTP_SSL(email_host, email_port)
         server.login(mail_name, mail_passwd)
         self._server = server
-        self._from = ("%s<%s>")%(from_name, mail_name)
+        self._from = mail_name
         self._from_name = from_name
         self._from_phone = from_phone
         self._text = text
@@ -26,7 +26,7 @@ class SendMail(object):
     def send(self, attachment, to_user, to, cc, file, html):
         message = MIMEMultipart()
         message['Subject'] = self._text + self._header   # 标题
-        message['From'] = self._from  # 发件人
+        message['From'] = ("%s<%s>")%(self._from_name, self._from)  # 发件人
         message['To'] = to    # 收件人
         message['Cc'] = cc    # 抄送人
 
