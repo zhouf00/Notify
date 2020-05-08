@@ -26,8 +26,12 @@ class FileProcessing(object):
         columns = self.get_data
         # 截取有效数据
         # data = df.iloc[:, columns.index(s_str):columns.index(e_str) + 1]
+        if cc:
+            df_cc = self._df[cc]
+        else:
+            df_cc = None
         data = pd.concat([self._df.iloc[:, columns.index(s_str):columns.index(e_str) + 1],
-                          self._df[to], self._df[type], self._df[cc]], axis=1)
+                          self._df[to], self._df[type], df_cc], axis=1)
         columns = list(data)
         # 获取收件人下标
         to_index = columns.index(to)
@@ -35,13 +39,13 @@ class FileProcessing(object):
         type_index = columns.index(type)
         # 获取抄送人，无抄送人则为空
         if cc in columns:
-            cc_index = len(columns)
+            cc_index = len(columns)-1
         else:
             cc_index = None
         data_dict = dict()
         # 将数据转化为字典格式
         # 用户 : {to: 发件人，cc: 抄送人，value: [[应发信息1],[应发信息2], ...]}
-        print(cc_index)
+        print(cc_index, len(columns))
         for var in data.values:
             if var[to_index] in data_dict.keys():
                 data_dict[var[type_index]]['value'].append(list(var[:to_index]))

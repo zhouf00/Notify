@@ -24,14 +24,14 @@ class MainUI(QMainWindow):
             self._init_ui()
             self._load_setting()
         except Exception as e:
-            QMessageBox.critical(self, '错误', '%s' % e)
+            QMessageBox.critical(self, '错误', '%s' % e,QMessageBox.Yes|QMessageBox.No,QMessageBox.Yes)
         # self._init_ui()
         # self._load_setting()
         self.show()
 
     def _init_ui(self):
         self.setFixedSize(800, 600)
-        # self.setWindowTitle('群发软件测试v0.1')
+        self.setWindowTitle('群发软件测试v3.1')
         self.axWidget = QAxWidget(self)
         main_widget = QWidget(self)
         main_widget.setObjectName('main_widget')
@@ -93,7 +93,7 @@ class MainUI(QMainWindow):
     # 工具栏信息
     def _tools_bar(self):
         self.send_act = QAction(qtawesome.icon('fa.paper-plane', color='white'), '发送邮件', self)
-        # self.send_act.setDisabled(True)
+        self.send_act.setDisabled(True)
         self.generate_act = QAction(qtawesome.icon('fa.play', color='green'), '生成PDF文件', self)
         self.generate_act.setDisabled(True)
         self.mailfresh_act = QAction(qtawesome.icon('fa.refresh',color='green'), '邮箱数据刷新', self)
@@ -328,20 +328,24 @@ class MainUI(QMainWindow):
         os.system('explorer %s' % self.setting.get_model(file))  # 打开文件
 
     def _func_send(self):
-        print('发送成功')
         self.send_act.setDisabled(True)
         mail_conf = self.setting.get_data(self.setting.get_conf('mail_conf.ini'))
         start_send = MyThread(target=self._thread_send, args=(mail_conf, self._datas, ))
         self._thread_list.append(start_send)
+        start_send._signal.connect(self._message)
         start_send.start()
 
     def _thread_send(self, mail_conf, datas):
-        send_mail = SendMail(mail_conf.values())
-        html = send_mail.get_html(self.setting.get_model(self.left_btn_5.text()))
-        for name, data in datas:
-            print(name, data['to_user'], data['to'], data['cc'], data['file'])
-            send_mail.send(name, data['to_user'], data['to'], data['cc'], data['file'],
-                           html)
+        try:
+            send_mail = SendMail(mail_conf.values())
+            html = send_mail.get_html(self.setting.get_model(self.left_btn_5.text()))
+            for name, data in datas:
+                send_mail.send(name, data['to_user'], data['to'], data['cc'], data['file'],
+                               html)
+        except Exception as e:
+            return 'warning,%s'%e
+        else:
+            return 'information,邮件发送成功，欢迎使用！'
 
 
     def _func_generate(self):
@@ -352,19 +356,19 @@ class MainUI(QMainWindow):
         self._func_update_table(header, len(self._datas), None)
         start_generate = MyThread(target=self._thread_generate, args=(emails, ))
         self._thread_list.append(start_generate)
+        start_generate._signal.connect(self._message)
         start_generate.start()
 
     def _thread_generate(self, emails, flag=True):
         datas = self._datas
-        # user_list = ['to_user', 'cc_user']
         val_list = ['to', 'cc', 'file']
         if datas:
-            for (name, data), i in zip(datas, range(len(datas))):
-                if flag:
-                    self.action.spanned_file(name, data)
-                to = ''
-                cc = ''
-                try:
+            try:
+                for (name, data), i in zip(datas, range(len(datas))):
+                    if flag:
+                        self.action.spanned_file(name, data)
+                    to = ''
+                    cc = ''
                     for user in data['to_user'].strip().split('、'):
                         if not user:
                             pass
@@ -387,20 +391,19 @@ class MainUI(QMainWindow):
                         data['cc'] = ''
                     for j in range(len(val_list)):
                         self.table.setItem(i, j, QTableWidgetItem('%s'%data[val_list[j]]))
-                except Exception as e:
-                    print(e)
-                finally:
-                    print(datas)
-            # self._func_update_table(header, len(datas), datas)
-            if not self.send_act.isEnabled():
-                self.send_act.setEnabled(True)
+            except Exception as e:
+                return 'warning,%s'%e
+            else:
+                return 'information,转换PDF成功，请检查邮箱、文件等信息后再发送'
+            finally:
+                if not self.send_act.isEnabled():
+                    self.send_act.setEnabled(True)
         else:
             pass
 
     def _func_mailfresh(self):
         emails = load_file(self.setting.get_conf(self.left_btn_1.text()))
         self._thread_generate(emails, flag=False)
-
 
     def _func_stop(self):
         pass
@@ -410,7 +413,17 @@ class MainUI(QMainWindow):
         #     thread.stop()
 
     def _func_set_mail(self):
-        dialog = ShowDialog()
+        mail_conf = self.setting.get_data(self.setting.get_conf('mail_conf.ini'))
+        mail_file = self.setting.get_conf('mail_conf.ini')
+        ShowDialog(mail_conf, mail_file)
+
+    def _message(self, msg):
+        if msg:
+            title, text = msg.split(',')
+            if title == 'warning':
+                QMessageBox.warning(self, title, text, QMessageBox.Yes)
+            elif title == 'information':
+                QMessageBox.information(self, title, text, QMessageBox.Yes)
 
     # 鼠标移动窗口
     # def mousePressEvent(self, event):
@@ -432,15 +445,76 @@ class MainUI(QMainWindow):
 
 class ShowDialog(QDialog):
 
-    def __init__(self):
+    def __init__(self, mail_conf, mail_file):
         super().__init__()
+        self._mail_conf = mail_conf
+        self._mail_file = mail_file
         self._init()
         self.exec_()
 
     def _init(self):
-        self.setWindowTitle('aaa')
-        self.setFixedSize(300, 400)
+        print(self._mail_conf)
+        self.setWindowTitle('邮箱设置')
+        self.setFixedSize(250, 300)
         self.setWindowModality(Qt.ApplicationModal)
+
+        dialog_layout = QGridLayout()
+        self.label_1 = QLabel('发件服务器：')
+        self.label_2 = QLabel('端口：')
+        self.label_3 = QLabel('Email帐号：')
+        self.label_4 = QLabel('密码：')
+        self.label_5 = QLabel('手机号：')
+        self.label_6 = QLabel('名字(签名用)：')
+        self.label_7 = QLabel('邮箱标题：')
+        self.label_8 = QLabel('正文插入内容：')
+        self.edit_1 = QLineEdit(self._mail_conf['email_host'])
+        self.edit_2 = QLineEdit(self._mail_conf['email_port'])
+        self.edit_3 = QLineEdit(self._mail_conf['mail_name'])
+        self.edit_4 = QLineEdit(self._mail_conf['mail_passwd'])
+        self.edit_4.setEchoMode(QLineEdit.Password)
+        self.edit_5 = QLineEdit(self._mail_conf['mail_name_phone'])
+        self.edit_6 = QLineEdit(self._mail_conf['name'])
+        self.edit_7 = QLineEdit(self._mail_conf['header'])
+        self.edit_8 = QLineEdit(self._mail_conf['name'])
+
+        btn_sure = QPushButton('确定')
+
+        dialog_layout.addWidget(self.label_1, 1, 0)
+        dialog_layout.addWidget(self.edit_1, 1, 1)
+        dialog_layout.addWidget(self.label_2, 2, 0)
+        dialog_layout.addWidget(self.edit_2, 2, 1)
+        dialog_layout.addWidget(self.label_3, 3, 0)
+        dialog_layout.addWidget(self.edit_3, 3, 1)
+        dialog_layout.addWidget(self.label_4, 4, 0)
+        dialog_layout.addWidget(self.edit_4, 4, 1)
+        dialog_layout.addWidget(self.label_5, 5, 0)
+        dialog_layout.addWidget(self.edit_5, 5, 1)
+        dialog_layout.addWidget(self.label_6, 6, 0)
+        dialog_layout.addWidget(self.edit_6, 6, 1)
+        dialog_layout.addWidget(self.label_7, 7, 0)
+        dialog_layout.addWidget(self.edit_7, 7, 1)
+        dialog_layout.addWidget(self.label_8, 8, 0)
+        dialog_layout.addWidget(self.edit_8, 8, 1)
+
+        dialog_layout.addWidget(btn_sure, 9, 0, 1, 2)
+
+        self.setLayout(dialog_layout)
+
+        btn_sure.clicked.connect(self._save_data)
+
+    def _save_data(self):
+        self._mail_conf['email_host'] =self.edit_1.text()
+        self._mail_conf['email_port'] = self.edit_2.text()
+        self._mail_conf['mail_name'] = self.edit_3.text()
+        self._mail_conf['mail_passwd'] = self.edit_4.text()
+        self._mail_conf['mail_name_phone'] = self.edit_5.text()
+        self._mail_conf['name'] = self.edit_6.text()
+        self._mail_conf['header'] = self.edit_7.text()
+        self._mail_conf['text'] = self.edit_8.text()
+        with open(self._mail_file, 'w', encoding='utf8') as f:
+            for key, value in self._mail_conf.items():
+                f.writelines('%s=%s\n'%(key, value))
+        self.close()
 
 
 if __name__ == '__main__':

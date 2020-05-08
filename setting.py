@@ -68,10 +68,8 @@ class Setting(object):
     def write_conf(self, datas, file=None):
         if not file:
             file = os.path.join(self._CONF_DIR, self._task_ini[self._task_name])
-        with open(file,
-                  'w', encoding='utf8') as f:
+        with open(file, 'w', encoding='utf8') as f:
             for key, value in datas.items():
-                print(key, value)
                 f.writelines('%s=%s\n'%(key, value))
 
     def get_data(self, file):
