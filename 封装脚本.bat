@@ -1,0 +1,1 @@
+pyinstaller -Fw qtGUI.py -p setting.py -p Tool.py -p get_data.py -p con_email.py -p qtCSS.qss -p Mythreading.py -i sb512x512.ico

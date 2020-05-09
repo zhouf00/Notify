@@ -475,7 +475,7 @@ class ShowDialog(QDialog):
         self.edit_5 = QLineEdit(self._mail_conf['mail_name_phone'])
         self.edit_6 = QLineEdit(self._mail_conf['name'])
         self.edit_7 = QLineEdit(self._mail_conf['header'])
-        self.edit_8 = QLineEdit(self._mail_conf['name'])
+        self.edit_8 = QLineEdit(self._mail_conf['text'])
 
         btn_sure = QPushButton('确定')
 
