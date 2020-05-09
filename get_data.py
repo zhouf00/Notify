@@ -94,7 +94,7 @@ class FileProcessing(object):
                 run = doc_table.cell(col + 1, i).paragraphs[0]
                 run.paragraph_format.alignment = WD_TABLE_ALIGNMENT.CENTER
                 # print(isinstance(value[i], str))
-                if isinstance(value[i], str) or isinstance(value[i], int):
+                if isinstance(value[i], str) or isinstance(value[i], float):
                     run = run.add_run(str(value[i]))
                 else:
                     run = run.add_run(str(value[i].strftime("%Y-%m-%d")))

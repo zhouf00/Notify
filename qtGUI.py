@@ -407,10 +407,10 @@ class MainUI(QMainWindow):
 
     def _func_stop(self):
         pass
-        print(self.send_act.isEnabled())
-        print(self.generate_act.isEnabled())
-        # for thread in self._thread_list:
-        #     thread.stop()
+        # print(self.send_act.isEnabled())
+        # print(self.generate_act.isEnabled())
+        for thread in self._thread_list:
+            thread.stop()
 
     def _func_set_mail(self):
         mail_conf = self.setting.get_data(self.setting.get_conf('mail_conf.ini'))
