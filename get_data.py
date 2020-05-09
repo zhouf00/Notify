@@ -45,10 +45,11 @@ class FileProcessing(object):
         data_dict = dict()
         # 将数据转化为字典格式
         # 用户 : {to: 发件人，cc: 抄送人，value: [[应发信息1],[应发信息2], ...]}
-        print(cc_index, len(columns))
+        row = 0
         for var in data.values:
             if var[to_index] in data_dict.keys():
-                data_dict[var[type_index]]['value'].append(list(var[:to_index]))
+                data_dict[var[type_index]]['value'].append(list(var[:columns.index(e_str)+1]))
+                row += 1
             else:
                 if cc_index:
                     data_dict[var[type_index]] = {
@@ -62,8 +63,9 @@ class FileProcessing(object):
                         'cc_user': '',
                         'value': [list(var[:columns.index(e_str)+1])]
                     }
+                row += 1
 
-        return data_dict.items()
+        return row, data_dict.items()
 
     ######################################
     #  进行文件转换的操作

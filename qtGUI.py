@@ -93,7 +93,7 @@ class MainUI(QMainWindow):
     # 工具栏信息
     def _tools_bar(self):
         self.send_act = QAction(qtawesome.icon('fa.paper-plane', color='white'), '发送邮件', self)
-        self.send_act.setDisabled(True)
+        # self.send_act.setDisabled(True)
         self.generate_act = QAction(qtawesome.icon('fa.play', color='green'), '生成PDF文件', self)
         self.generate_act.setDisabled(True)
         self.mailfresh_act = QAction(qtawesome.icon('fa.refresh',color='green'), '邮箱数据刷新', self)
@@ -184,7 +184,7 @@ class MainUI(QMainWindow):
         left_chk1_btnUSE.setObjectName('left_btn')
         self.left_btn_1 = QPushButton('请添加员工邮箱文件')
         self.left_btn_1.setObjectName('left_btn_file')
-        self.left_btn_2 = QPushButton('确定发送内空')
+        self.left_btn_2 = QPushButton('确定发送内容')
         self.left_btn_2.setObjectName('left_btn')
         self.left_chk2 = QComboBox()
         # self.left_chk2.addItems(['日期'])
@@ -270,7 +270,6 @@ class MainUI(QMainWindow):
         # self.axWidget.show()
 
     def _func_sure_file(self):
-        print('确定发送内容')
         self.generate_act.setEnabled(True)
         if self.send_act.isEnabled():
             self.send_act.setDisabled(True)
@@ -282,31 +281,32 @@ class MainUI(QMainWindow):
         conf['to_user'] = self.left_chk5.currentText()
         conf['cc_user'] = self.left_chk6.currentText()
         self.setting.write_conf(conf)
-        datas = self.action.get_excelData(conf['s_str'], conf['e_str'], conf['type'], conf['to_user'], conf['cc_user'])
-        self._func_update_table(self.action.get_data, len(datas), datas, (conf['s_str'], conf['e_str']))
+        row, datas = self.action.get_excelData(conf['s_str'], conf['e_str'], conf['type'], conf['to_user'], conf['cc_user'])
+        self._func_update_table(self.action.get_data, row, datas, (conf['s_str'], conf['e_str']))
         self._datas = datas
 
     def _func_update_table(self, col_header, row, datas, index=None):
         self.table.deleteLater()
         self.table = QTableWidget()
         self.table.setRowCount(row)
+        data_list = []
         if index:
             s = col_header.index(index[0])
             e = col_header.index(index[1])
             tableHeader = col_header[s:e+1]
             self.table.setColumnCount(len(tableHeader))
             self.table.setHorizontalHeaderLabels(tableHeader)
-            # self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-            # self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Interactive)
-            for data, i in zip(datas, range(row)):
+            for data in datas:
                 for var in data[1]['value']:
-                    for j in range(len(var)):
-                        self.table.setItem(i, j, QTableWidgetItem(str(var[j])))
+                    data_list.append(var)
+            for data, i in zip(data_list, range(row)):
+                for j in range(len(data)):
+                    self.table.setItem(i, j, QTableWidgetItem(str(data[j])))
         else:
             tableHeader = col_header
             self.table.setColumnCount(len(tableHeader))
             self.table.setHorizontalHeaderLabels(tableHeader)
-
+            pass
         self.right_layout.addWidget(self.table)
 
     def _func_execl_file(self):
@@ -413,17 +413,20 @@ class MainUI(QMainWindow):
             thread.stop()
 
     def _func_set_mail(self):
-        mail_conf = self.setting.get_data(self.setting.get_conf('mail_conf.ini'))
-        mail_file = self.setting.get_conf('mail_conf.ini')
-        ShowDialog(mail_conf, mail_file)
+        try:
+            mail_conf = self.setting.get_data(self.setting.get_conf('mail_conf.ini'))
+            mail_file = self.setting.get_conf('mail_conf.ini')
+            ShowDialog(mail_conf, mail_file)
+        except Exception as e:
+            self._message('warning,%s'%e)
 
     def _message(self, msg):
         if msg:
             title, text = msg.split(',')
             if title == 'warning':
-                QMessageBox.warning(self, title, text, QMessageBox.Yes)
+                QMessageBox.warning(self, '报警', text, QMessageBox.Yes)
             elif title == 'information':
-                QMessageBox.information(self, title, text, QMessageBox.Yes)
+                QMessageBox.information(self, '提示', text, QMessageBox.Yes)
 
     # 鼠标移动窗口
     # def mousePressEvent(self, event):
